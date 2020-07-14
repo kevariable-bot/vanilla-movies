@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Single Pages Application</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body>
+    <div class="container-sm mt-5">
+      <div class="row">
+        <div class="col" id="title">
+          <h2>Vanilla Movies</h2>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5 mt-3">
+          <div class="input-group mb-3">
+            <input
+              type="text"
+              class="form-control search-keyword"
+              placeholder="write something.."
+            />
+            <div class="input-group-append">
+              <button
+                class="btn btn-warning search-button"
+                type="button"
+                id="button-addon2"
+              >
+                Search
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row card-container centered mt-3"></div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="get-modal-details" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="get-modal-detailsLabel">
+              Vanilla Movies Detail
+            </h5>
+          </div>
+          <div class="modal-body">
+            <div class="container-fluid modal-container"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-warning" data-dismiss="modal">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstraps -->
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+      integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+      integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Vanilla JS -->
+    <script>
+      const searchButton = document.querySelector('.search-button');
+      const searchKeyword = document.querySelector('.search-keyword');
+      searchKeyword.addEventListener('keyup', async e => {
+        if(e.keyCode === 13) {
+          try {
+          const movies = await getMovies(searchKeyword.value);
+          updateUICards(movies);
+        } catch (error) {
+          alert('Movies Not Found!!');
+          console.log(error);
+         }
+        }
+      });
+
+      searchButton.addEventListener('click', async function() {
+        try {
+          const movies = await getMovies(searchKeyword.value);
+          updateUICards(movies);
+        } catch (error) {
+          alert('Movies Not Found!!');
+          console.log(error);
+        }
+      });
+
+      function getMovies(key) {
+        return fetch('http://www.omdbapi.com/?apikey=c8832f63&s=' + key).then(
+          response => {
+            if (!response.ok) {
+              throw new Error('API tidak meresponse');
+            } else {
+              return response.json();
+            }
+          }
+        );
+      }
+
+      function updateUICards({ Search }) {
+        let UI = '';
+        Search.forEach(el => (UI += elementCards(el)));
+        document.querySelector('.card-container').innerHTML = UI;
+      }
+
+      // Event Binding
+      document.addEventListener('click', async function(e) {
+        if (e.target.classList.contains('card-button')) {
+          try {
+            const movies = await getMoviesDetail(e.target.dataset.imdbid);
+            const modalContainer = document.querySelector('.modal-container');
+            modalContainer.innerHTML = updateUIDetail(movies);
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      });
+
+      function getMoviesDetail(imdbid) {
+        return fetch(
+          'http://www.omdbapi.com/?apikey=c8832f63&i=' + imdbid
+        ).then(response => {
+          if (!response.ok) {
+            throw new Error('API tidak meresponse');
+          } else {
+            return response.json();
+          }
+        });
+      }
+
+      function elementCards({ Title, Year, imdbID, Poster }) {
+        return /*html*/ `<div class="col-md-4 mt-3 mb-4">
+          <div class="card">
+            <img src="${Poster}" class="card-img-top"/>
+            <div class="card-body">
+              <h5 class="card-title">${Title}</h5>
+              <h6 class="card-subtitle mb-2 text-muted">${Year}</h6>
+              <a href="#" class="btn btn-warning card-button" data-imdbid="${imdbID}" data-toggle="modal" data-target="#get-modal-details">
+                Show Details
+              </a>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      function updateUIDetail({ Title, Year, Genre, Writer, Actors, Plot, Poster }) {
+        return /*html*/ `<div class="row">
+          <div class="col-md-3">
+            <img src="${Poster}" class="img-fluid">
+          </div>
+          <div class="col-md">
+            <ul class="list-group">
+              <li class="list-group-item">${Title} (${Year})</li>
+              <li class="list-group-item"><strong>Genre: </strong>${Genre}</li>
+              <li class="list-group-item"><strong>Writer: </strong>${Writer}</li>
+              <li class="list-group-item"><strong>Actors: </strong>${Actors}</li>
+              <li class="list-group-item"><strong>Plot: </strong>${Plot}</li>
+            </ul>
+          </div>
+        </div>`;
+      }
+    </script>
+  </body>
+</html>
